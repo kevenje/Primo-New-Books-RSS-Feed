@@ -1,0 +1,138 @@
+<?PHP header('Content-Type: application/rss+xml; charset=utf-8'); 
+print('<?xml version="1.0" encoding="utf-8"?'.'>'); 
+
+//Get the query from the URL ?query=
+$queryRaw=$_GET['query'];
+$query = strip_tags($queryRaw); //Get rid of html tags
+$query = str_replace('+', ' ', $query); //get rid of plus signs
+$query = preg_replace("/[^a-zA-Z0-9\s]/", "", $query); // get rid of everything but letters, numbers, and spaces
+$query = str_replace(' ', '%20', $query); // replace spaces
+$query = trim($query); //get rid of leading or trailing spaces
+
+//Variables for Primo instances
+$campus_stem = 'csu-sdsu'; // for Primo URL
+$campus_view ='01CALS_SDL:01CALS_SDL'; // for Primo Search
+$campus_scope = 'MyInst_and_CI'; // for Primo Search
+$campus_tab='Everything'; // for Primo Search
+$key='[YOUR Primo Search API Key]';
+$numresults=10; //limit your results. LibGuides doesn't like more than 10
+$filelocation ='https://libapps.sdsu.edu/rss/'; //location of newbook files, end with "/"
+$feedlocation= 'https://libapps.sdsu.edu/rss/newbooks.rss?query='.$query; //location of the new books file
+$lastmnth = date("Ymd",strtotime("-30 days")); // the date 30 days ago for API call
+$lastmnthdispay = date("Y-m-d",strtotime("-30 days")); // the date 30 days ago for display
+
+$URL ='https://api-na.hosted.exlibrisgroup.com/primo/v1/search?vid='.$campus_view.'&scope='.$campus_scope.'&tab='.$campus_tab.'&offset=0&q=sub,exact,'.$query.',AND&qInclude=facet_rtype,exact,books&qExclude=facet_rtype,exact,government_documents&pcAvailability=false&limit='.$numresults.'&sort=date_d&fromDate='.$lastmnth.'000100&apikey='.$key; //the API call - limited to new books that aren't gov pubs for the last 30 days
+
+// Initializing curl
+$curl = curl_init();
+// Sending GET request to reqres.in
+// server to get JSON data
+curl_setopt($curl, CURLOPT_URL, 
+    $URL);
+// Telling curl to store JSON
+// data in a variable instead
+// of dumping on screen
+curl_setopt($curl, 
+    CURLOPT_RETURNTRANSFER, true);
+// Executing curl
+$response = curl_exec($curl);
+// Checking if any error occurs 
+// during request or not
+if($e = curl_error($curl)) {
+    echo $e;
+} else {      
+    // Decoding JSON data
+    $data = json_decode($response, true);  
+    // Outputing JSON data in
+    // Decoded form
+    //var_dump($data);
+}
+// Closing curl
+curl_close($curl);
+    $feedlink = 'https://'.$campus_stem.'.primo.exlibrisgroup.com/discovery/search?query=sub,exact,'.$query.',AND&tab='.$campus_tab.'&search_scope='.$campus_scope.'&vid='.$campus_view.'&mfacet=rtype,include,books,1,lk&mfacet=rtype,exclude,government_documents,1,lk&mfacet=newrecords,include,30%20days%20back,1,lk&lang=en&mode=advanced&sortby=date_d&offset=0
+    ';
+    $feedlink = urlencode($feedlink);
+	echo '<rss version="2.0" xml:base="'.$feedlocation.'" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:atom="http://www.w3.org/2005/Atom">'."\r\n";
+	echo '<channel>'."\r\n";
+	echo '<language>en</language>'."\r\n";
+    echo '<atom:link href="'.$feedlocation.'" rel="self" type="application/rss+xml" />'."\r\n";
+	echo '<title>'.$query.': New Books</title>'."\r\n";
+	echo '<link>'.$filelocation.'l.php?l='.$feedlink.'</link>'."\r\n";
+$arraytest='';
+		$totalcount = $data['info']['total']; //Get total results. This doesn't match for searches which include Alma data - maybe due to indexing
+		if (isset($data['docs']['pnx'])) 
+		$arraytest = $data['docs']['pnx']; //testing whether results are in an array, or not
+		$bibrecords = $data['docs']; //This section of the JSON contains the records
+	echo '<description>'.$totalcount.' new books added from '.$lastmnthdispay.'</description>';
+	if(is_array($arraytest)) { //If one result
+	   $recordidraw = $bibrecords['pnx']['control']['recordid']['0']; //get the record ID so that we can send users to the record
+	   $recordid = is_array($recordidraw) ? $recordidraw[0] : $recordidraw; //Is there more than one? Get the first one[0] or the only one
+	   $adaptor = $bibrecords['adaptor'];
+	   $context = $bibrecords['context'];
+	   $type = $bibrecords['pnx']['display']['type'][0]; // Get the type from JSON
+	   $titleraw = $bibrecords['pnx']['display']['title'][0]; // Get the title from JSON
+	   $titleraw = str_replace(array('&', '?'), '' , $titleraw);
+	   $creator = $bibrecords['pnx']['display']['lds10'][0];
+	   $publisher2 = $creator = $bibrecords['pnx']['display']['publisher'][0];
+	   $publisher = str_replace('&', '&amp;' , $publisher2);
+	   $title = is_array($titleraw) ? $titleraw[0] : $titleraw; // Is there more than one title in an array? If so choose the first title[0], if not get the only title
+	   if (isset($bibrecords['pnx']['display']['ispartof'][0])) 
+	   $source = $bibrecords['pnx']['display']['ispartof'][0]; // Get the source (journals) from JSON
+	   else
+	   $source = '';
+	   if (isset($bibrecords['pnx']['sort']['creationdate'][0])) {
+	   $creationdate = $bibrecords['pnx']['sort']['creationdate'][0]; // Get the creation date (books) source from JSON
+	   $creationdate = substr($creationdate, 0, 4);
+	   }
+	    echo '<item>'."\r\n";
+		$onesearchurl='https://'.$campus_stem.'.primo.exlibrisgroup.com/discovery/fulldisplay?docid='.$recordid.'&context='.$context.'&vid='.$alma.'&lang=en&search_scope='.$primo_scope.'&adaptor='.$adaptor.'&tab='.$primo_tab.'&query=any,contains,'.$query.'&mode=advanced&offset=0';
+		    $onesearchurl = urlencode($onesearchurl);
+			echo '<title>'.$title.'</title>'."\r\n";
+	        echo '<link>'.$filelocation.'l.php?l='.$onesearchurl.'</link>'."\r\n";
+			echo '<description>';
+			if(isset($publisher)) echo ''.$publisher;
+			if(isset($creationdate)) echo ', '.$creationdate;
+			echo '</description>'."\r\n";
+			echo '<guid isPermaLink="false">'.$recordid.'</guid>'."\r\n";
+	   	echo '</item>'."\r\n";
+	}
+	 else { //If an array of results
+		 foreach($bibrecords as $bibrecord){ //for each bib record in the search results do the following
+		 $i++;
+		   $recordidraw = $bibrecord['pnx']['control']['recordid']; //get the record ID so that we can send users to the record
+		   $recordid = is_array($recordidraw) ? $recordidraw[0] : $recordidraw; //Is there more than one? Get the first one[0] or the only one
+		   $adaptor = $bibrecord['adaptor'];
+		   $context = $bibrecord['context'];
+		   $type = $bibrecord['pnx']['display']['type'][0]; // Get the type from JSON
+	   	   $titleraw = $bibrecord['pnx']['display']['title'][0]; // Get the title from JSON
+	   	   	   $titleraw = str_replace(array('&', '?'), '' , $titleraw);
+		   $creator = $bibrecord['pnx']['display']['lds10'][0];
+		   $publisher2 = $creator = $bibrecord['pnx']['display']['publisher'][0];
+		   $publisher = str_replace('&', '&amp;' , $publisher2);
+	   	   $title = is_array($titleraw) ? $titleraw[0] : $titleraw; // Is there more than one title in an array? If so choose the first title[0], if not get the only title
+		   if (isset($bibrecord['pnx']['display']['ispartof'][0])) 
+	   	   $source = $bibrecord['pnx']['display']['ispartof'][0]; // Get the source (journals) from JSON
+		   else
+		   $source = '';
+	       if (isset($bibrecord['pnx']['sort']['creationdate'][0])) {
+	       $creationdate = $bibrecord['pnx']['sort']['creationdate'][0]; // Get the creation date (books) source from JSON
+		   $creationdate = substr($creationdate, 0, 4);
+		   }
+		   echo '<item>'."\r\n";
+			$onesearchurl='https://'.$campus_stem.'.primo.exlibrisgroup.com/discovery/fulldisplay?docid='.$recordid.'&context='.$context.'&vid='.$campus_view.'&lang=en&search_scope='.$primo_scope.'&adaptor='.$adaptor.'&tab='.$campus_tab.'&query=any,contains,'.$query.'&mode=advanced&offset=0';
+					    $onesearchurl = urlencode($onesearchurl);
+			echo '<title>'.$title.'</title>'."\r\n";
+	        echo '<link>'.$filelocation.'l.php?l='.$onesearchurl.'</link>'."\r\n";
+			echo '<description>';
+			if(isset($publisher)) echo ''.$publisher;
+			if(isset($creationdate)) echo ', '.$creationdate;
+			echo '</description>'."\r\n";
+			echo '<guid isPermaLink="false">'.$recordid.'</guid>'."\r\n";
+	   		echo '</item>'."\r\n";
+  		
+		}
+	 }	
+?>
+
+</channel>
+</rss>
