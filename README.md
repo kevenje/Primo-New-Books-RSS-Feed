@@ -6,5 +6,5 @@
 
 # This uses the Ex Libris Primo Search API available at https://developers.exlibrisgroup.com/primo/apis/search/
 # Access to the API requires an API Key - https://developers.exlibrisgroup.com/primo/apis/#defining
-# This requires the following be added to your .htdocs file to process .rss files with php
+# This requires the following be added to your .htaccess file to process .rss files with php
 # AddHandler application/x-httpd-ea-php73 .php .xml .rss
