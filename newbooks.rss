@@ -15,7 +15,7 @@ $campus_view ='01CALS_SDL:01CALS_SDL'; // for Primo Search
 $campus_scope = 'MyInst_and_CI'; // for Primo Search
 $campus_tab='Everything'; // for Primo Search
 $key='[YOUR Primo Search API Key]';
-$numresults=10; //limit your results. LibGuides doesn't like more than 10
+$numresults=10; //limit your results. LibGuides doesn't like more than 5
 $filelocation ='https://libapps.sdsu.edu/rss/'; //location of newbook files, end with "/"
 $feedlocation= 'https://libapps.sdsu.edu/rss/newbooks.rss?query='.$query; //location of the new books file
 $lastmnth = date("Ymd",strtotime("-30 days")); // the date 30 days ago for API call
