@@ -17,7 +17,7 @@ $campus_tab='Everything'; // for Primo Search
 $key='[YOUR Primo Search API Key]';
 $numresults=10; //limit your results. LibGuides doesn't like more than 5
 $filelocation ='https://libapps.sdsu.edu/rss/'; //location of newbook files, end with "/"
-$feedlocation= 'https://libapps.sdsu.edu/rss/newbooks.rss?query='.$query; //location of the new books file
+$feedlocation= 'https://libapps.sdsu.edu/rss/newbooks.rss?query='.$query; //location of the rss feed
 $lastmnth = date("Ymd",strtotime("-30 days")); // the date 30 days ago for API call
 $lastmnthdispay = date("Y-m-d",strtotime("-30 days")); // the date 30 days ago for display
 
